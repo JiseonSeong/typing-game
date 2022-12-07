@@ -19,6 +19,9 @@ let time = 0;
 let timeInterval;
 let isPlaying = false;
 let isReady = false;
+let btnTwoControl = false;
+let btnThreeControl = false;
+
 
 startBtn.addEventListener("click", e => {
   scoreDisplay.innerText = score;
@@ -27,26 +30,63 @@ startBtn.addEventListener("click", e => {
   countDown();
   setNewWord();
   btnControl();
-
+  console.log(`btnTwo - ${btnTwoControl.toString()}`);
+  console.log(`btnThree - ${btnThreeControl.toString()}`);
 });
 
-levelOneBtn.addEventListener("click", startBtn);
-levelTwoBtn.addEventListener("click", init);
-levelThreeBtn.addEventListener("click", startBtn);
 
 init()
 async function init() {
   const res = await fetch(API_URL);
   const data = await res.json();
-  words = data.filter(item => item.length < 10)
+
+  if (btnTwoControl === true || btnThreeControl === true) {
+    words = data.filter(item => item.length < 20 && item.length > 10);
+    console.log("10 < letters < 20");
+  } else words = data.filter(item => item.length < 10);
+
   isReady = true;
   startBtn.disabled = false;
-  //console.log(words);
-  //words = data;
 }
+
+levelOneBtn.addEventListener("click", e => {
+  btnThreeControl = false;
+  btnTwoControl = false;
+  init()
+});
+levelTwoBtn.addEventListener("click", e => {
+  btnThreeControl = false;
+  btnTwoControl = true;
+  init()
+});
+levelThreeBtn.addEventListener("click", e => {
+  btnThreeControl = true;
+  btnTwoControl = false;
+  init()
+});
+
+
+async function levelThreeCondition(event) {
+  const res = await fetch(API_URL);
+  const data = await res.json();
+
+  const target = event.target;
+  const eventType = event.type;
+
+  if (target.id === "levelThree" && eventType === "click") {
+    //console.log(target.id);
+    btnTwoControl = false;
+    btnThreeControl = true;
+    words = data.filter(item => item.length < 20 && item.length > 10);
+    console.log(`btnTwo - ${btnTwoControl.toString()}`);
+    console.log(`btnThree - ${btnThreeControl.toString()}`);
+  }
+}
+
 /* function init(){ 
     const res = fetch(API_URL).then(res=> res.json()).then((data) => words = data);
 } //promise문법 */
+
 
 wordInput.addEventListener("input", (e) => {
   const typedText = e.target.value;
@@ -66,7 +106,7 @@ function gameover() {
   messageDisplay.style.color = "red";
   score = 0;
   startBtn.disabled = false;
-  btnControl()
+  btnControl();
 }
 
 //time countdown
@@ -75,7 +115,7 @@ function countDown() {
     time = time - 1;
     timeDisplay.innerText = time;
   }
-  if (time === 0) {
+  if (time === 0 && isPlaying === true) {
     gameover();
   }
 }
@@ -89,7 +129,9 @@ function setNewWord() {
   currentWord.innerText = words[randomIndex];
 
   if (isPlaying === false) {
-    timeInterval = setInterval(countDown, 1000);
+    if(!btnThreeControl) {
+      timeInterval = setInterval(countDown, 1000); 
+    }else timeInterval = setInterval(countDown, 200); 
     isPlaying = true;
     startBtn.disabled = true;
   }
